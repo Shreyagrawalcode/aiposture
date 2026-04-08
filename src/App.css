@@ -1,0 +1,142 @@
+/* ── PostureAI App Styles ── */
+
+.app {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  background: var(--bg);
+  color: var(--text);
+}
+
+/* ── Header ── */
+.app-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 32px;
+  border-bottom: 1px solid var(--border);
+  background: var(--surface);
+  flex-shrink: 0;
+}
+
+.logo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.logo-icon {
+  font-size: 1.6rem;
+  color: var(--accent);
+  filter: drop-shadow(0 0 8px var(--accent-glow));
+}
+
+.logo-text {
+  font-size: 1.3rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  color: var(--text);
+}
+
+.header-sub {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+/* ── Selector section ── */
+.selector-section {
+  padding: 20px 32px 0;
+}
+
+/* ── Exercise description ── */
+.exercise-desc {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 36px;
+  font-size: 0.82rem;
+  color: var(--text-muted);
+  letter-spacing: 0.03em;
+}
+
+.exercise-desc-icon {
+  font-size: 1rem;
+}
+
+/* ── Camera guide ── */
+.guide-section {
+  padding: 10px 32px 0;
+}
+
+/* ── Main content ── */
+.main-content {
+  display: grid;
+  grid-template-columns: 1fr 360px;
+  gap: 20px;
+  padding: 0 32px 20px;
+  flex: 1;
+  min-height: 0;
+}
+
+.camera-wrapper {
+  aspect-ratio: 16 / 9;
+  min-height: 0;
+  border-radius: 14px;
+  overflow: hidden;
+  border: 1.5px solid var(--border);
+  background: #1a1a2e;
+}
+
+.feedback-wrapper {
+  overflow-y: auto;
+  min-height: 0;
+  padding-right: 2px;
+}
+
+/* ── Footer ── */
+.app-footer {
+  padding: 12px 32px;
+  border-top: 1px solid var(--border);
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  text-align: center;
+  letter-spacing: 0.04em;
+}
+
+/* ── Responsive ── */
+@media (max-width: 900px) {
+  .main-content {
+    grid-template-columns: 1fr;
+    padding: 0 16px 20px;
+  }
+  .camera-wrapper {
+    aspect-ratio: 4 / 3;
+  }
+  .feedback-wrapper {
+    overflow-y: visible;
+  }
+  .app-header {
+    padding: 14px 16px;
+  }
+  .selector-section {
+    padding: 16px 16px 0;
+  }
+  .guide-section {
+    padding: 10px 16px 0;
+  }
+  .exercise-desc {
+    padding: 8px 20px;
+  }
+  .header-sub {
+    display: none;
+  }
+}
+
+@media (max-width: 480px) {
+  .logo-text {
+    font-size: 1.1rem;
+  }
+}

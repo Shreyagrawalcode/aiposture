@@ -1,0 +1,54 @@
+.exercise-selector {
+  display: flex;
+  gap: 8px;
+  padding: 0 4px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.exercise-tab {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 20px;
+  background: var(--surface);
+  border: 1.5px solid var(--border);
+  border-radius: 10px;
+  color: var(--text-muted);
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.exercise-tab:hover {
+  border-color: var(--accent);
+  color: var(--text);
+  background: var(--surface-hover);
+}
+
+.exercise-tab.active {
+  border-color: var(--accent);
+  color: var(--accent);
+  background: var(--accent-dim);
+  box-shadow: 0 0 12px var(--accent-glow);
+}
+
+.exercise-icon {
+  font-size: 1.1rem;
+}
+
+.exercise-label {
+  letter-spacing: 0.02em;
+}
+
+@media (max-width: 600px) {
+  .exercise-tab {
+    padding: 8px 14px;
+    font-size: 0.82rem;
+  }
+  .exercise-icon {
+    font-size: 1rem;
+  }
+}

@@ -1,0 +1,64 @@
+/* ── PostureAI — Light Theme ── */
+
+:root {
+  /* Colours */
+  --bg: #f7f8fc;
+  --surface: #ffffff;
+  --surface-hover: #f0f1f7;
+  --border: #e2e4ee;
+  --text: #1a1a2e;
+  --text-dim: #44445e;
+  --text-muted: #8888aa;
+  --accent: #00a85a;
+  --accent-dim: rgba(0, 168, 90, 0.08);
+  --accent-glow: rgba(0, 168, 90, 0.25);
+
+  /* Typography */
+  --sans: 'Inter', 'Segoe UI', system-ui, sans-serif;
+
+  font: 16px/1.5 var(--sans);
+  color: var(--text);
+  background: var(--bg);
+  color-scheme: light;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  background: var(--bg);
+  min-height: 100vh;
+}
+
+#root {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+button {
+  font-family: inherit;
+  cursor: pointer;
+}
+
+::-webkit-scrollbar {
+  width: 6px;
+}
+::-webkit-scrollbar-track {
+  background: var(--bg);
+}
+::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--text-muted);
+}

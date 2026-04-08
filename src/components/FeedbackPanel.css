@@ -1,0 +1,178 @@
+.feedback-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  height: 100%;
+}
+
+/* ── Status badge ── */
+.status-badge {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 18px;
+  border-radius: 12px;
+  font-weight: 700;
+  font-size: 1rem;
+  border: 2px solid transparent;
+  transition: all 0.3s ease;
+  position: relative;
+}
+
+.status-icon {
+  font-size: 1.3rem;
+  font-weight: 900;
+  width: 24px;
+  text-align: center;
+}
+
+.status-good {
+  background: #edfdf5;
+  border-color: var(--accent);
+  color: #007a40;
+  box-shadow: 0 2px 12px rgba(0, 168, 90, 0.12);
+}
+
+.status-warning {
+  background: #fff8e6;
+  border-color: #e09000;
+  color: #9a6200;
+  box-shadow: 0 2px 12px rgba(224, 144, 0, 0.12);
+}
+
+.status-fix {
+  background: #fff0f0;
+  border-color: #e03030;
+  color: #b00000;
+  box-shadow: 0 2px 12px rgba(224, 48, 48, 0.12);
+}
+
+.status-idle {
+  background: #f0f4ff;
+  border-color: #5580ee;
+  color: #2244cc;
+}
+
+.loading-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: currentColor;
+  margin-left: auto;
+  animation: pulse 1s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 0.3; transform: scale(0.8); }
+  50% { opacity: 1; transform: scale(1.2); }
+}
+
+/* ── Angles ── */
+.angles-row {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.angle-chip {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 10px 16px;
+  min-width: 90px;
+  flex: 1;
+}
+
+.angle-value {
+  font-size: 1.6rem;
+  font-weight: 800;
+  color: var(--text);
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+
+.angle-label {
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  margin-top: 4px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+/* ── Issues ── */
+.issues-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.issue-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 10px 14px;
+  font-size: 0.88rem;
+  color: var(--text);
+  line-height: 1.4;
+}
+
+.issue-bullet {
+  color: var(--accent);
+  font-size: 1.1rem;
+  font-weight: 700;
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+/* ── Tips ── */
+.tips-section {
+  margin-top: auto;
+}
+
+.tips-header {
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--text-muted);
+  margin-bottom: 10px;
+  font-weight: 600;
+}
+
+.tips-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.tip-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--accent);
+  border-radius: 8px;
+  padding: 10px 14px;
+  font-size: 0.86rem;
+  color: var(--text-dim);
+  line-height: 1.5;
+}
+
+.tip-number {
+  color: var(--accent);
+  font-weight: 700;
+  font-size: 0.78rem;
+  width: 18px;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.tip-text {
+  flex: 1;
+}
