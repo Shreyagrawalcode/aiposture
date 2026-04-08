@@ -2,7 +2,6 @@ import { useEffect, useRef, useState, useCallback } from 'react';
 import {
   PoseLandmarker,
   FilesetResolver,
-  DrawingUtils,
 } from '@mediapipe/tasks-vision';
 import { type ExerciseType, type Landmark, type PostureFeedback } from '../types';
 import { analyzeExercise } from '../utils/exerciseAnalysis';

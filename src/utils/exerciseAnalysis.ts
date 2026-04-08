@@ -1,5 +1,5 @@
 import { type ExerciseType, type Landmark, type PostureFeedback, type PostureStatus } from '../types';
-import { allVisible, calculateAngle, midpoint } from './angleUtils';
+import { allVisible, calculateAngle } from './angleUtils';
 
 // ─── Squat ────────────────────────────────────────────────────────────────────
 function analyzeSquat(lm: Landmark[]): PostureFeedback {
@@ -130,7 +130,6 @@ function analyzePushup(lm: Landmark[]): PostureFeedback {
     const ankleY = lm[27].y;
     const hipY = lm[23].y;
     // In normalised coords y increases downward
-    const lineY = shoulderY + ((lm[27].x - lm[11].x) === 0 ? 0 : (hipY - shoulderY)); // rough
     const expectedHipY = shoulderY + (ankleY - shoulderY) * 0.5; // midpoint
     hipSag = hipY > expectedHipY + 0.05;
     hipPike = hipY < expectedHipY - 0.08;

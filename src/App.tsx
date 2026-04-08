@@ -3,7 +3,7 @@ import ExerciseSelector from './components/ExerciseSelector';
 import PoseDetector from './components/PoseDetector';
 import FeedbackPanel from './components/FeedbackPanel';
 import CameraGuide from './components/CameraGuide';
-import { type ExerciseType, type PostureFeedback, EXERCISES } from './types';
+import { type ExerciseType, type PostureFeedback } from './types';
 import './App.css';
 
 function getStartFeedback(exercise: ExerciseType): PostureFeedback {
@@ -55,8 +55,6 @@ export default function App() {
   const handleLoadingChange = useCallback((isLoading: boolean) => {
     setLoading(isLoading);
   }, []);
-
-  const currentExercise = EXERCISES.find((e) => e.id === exercise)!;
 
   return (
     <div className="app">
