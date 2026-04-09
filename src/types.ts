@@ -29,6 +29,12 @@ export interface ExerciseConfig {
   description: string;
 }
 
+export interface WorkoutResults {
+  repCount: number;
+  issues: string[];
+  exercise: ExerciseType;
+}
+
 export const EXERCISES: ExerciseConfig[] = [
   {
     id: 'squat',

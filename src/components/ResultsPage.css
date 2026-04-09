@@ -1,0 +1,205 @@
+.results-page {
+  min-height: 100vh;
+  background: var(--bg);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 32px 20px 80px;
+  gap: 28px;
+}
+
+/* ── Header ── */
+.results-header {
+  width: 100%;
+  max-width: 760px;
+}
+
+.results-logo {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.results-logo-icon {
+  font-size: 1.4rem;
+  color: var(--accent);
+}
+
+.results-logo-text {
+  font-size: 1.4rem;
+  font-weight: 800;
+  color: var(--text);
+}
+
+/* ── Summary card ── */
+.results-summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  max-width: 760px;
+  background: var(--surface);
+  border: 1.5px solid var(--border);
+  border-radius: 18px;
+  padding: 28px 36px;
+  gap: 24px;
+}
+
+.results-ex-info {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.results-ex-icon {
+  font-size: 2.8rem;
+}
+
+.results-ex-name {
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: var(--text);
+}
+
+.results-reps-block {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  line-height: 1;
+}
+
+.reps-number {
+  font-size: 4rem;
+  font-weight: 900;
+  color: var(--accent);
+  line-height: 1;
+}
+
+.reps-label {
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  color: var(--text-muted);
+  margin-top: 4px;
+  text-transform: uppercase;
+}
+
+/* ── Perfect session ── */
+.results-perfect {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  padding: 40px 24px;
+  background: #edfdf5;
+  border: 2px solid var(--accent);
+  border-radius: 16px;
+  width: 100%;
+  max-width: 760px;
+  color: #007a40;
+  font-size: 1.1rem;
+  font-weight: 600;
+}
+
+.perfect-icon {
+  font-size: 2.5rem;
+}
+
+/* ── Issues section ── */
+.results-issues-section {
+  width: 100%;
+  max-width: 760px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.results-section-title {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--text);
+  letter-spacing: 0.01em;
+}
+
+.results-issues-list {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.results-issue-card {
+  background: var(--surface);
+  border: 1.5px solid var(--border);
+  border-left: 4px solid #e03030;
+  border-radius: 14px;
+  padding: 22px 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.issue-card-title {
+  font-size: 0.98rem;
+  font-weight: 700;
+  color: #c00000;
+  line-height: 1.4;
+}
+
+.issue-card-section {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.issue-card-label {
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.09em;
+  color: var(--text-muted);
+}
+
+.issue-card-section p {
+  font-size: 0.88rem;
+  color: var(--text-dim);
+  line-height: 1.7;
+  margin: 0;
+}
+
+.issue-card-generic {
+  font-size: 0.88rem;
+  color: var(--text-muted);
+  line-height: 1.6;
+  margin: 0;
+}
+
+/* ── Do Again button ── */
+.try-again-btn {
+  margin-top: 8px;
+  padding: 16px 56px;
+  background: var(--accent);
+  color: #fff;
+  border: none;
+  border-radius: 14px;
+  font-size: 1.05rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  cursor: pointer;
+  transition: opacity 0.2s, transform 0.15s;
+  box-shadow: 0 4px 20px var(--accent-glow);
+}
+
+.try-again-btn:hover {
+  opacity: 0.88;
+  transform: translateY(-2px);
+}
+
+/* ── Responsive ── */
+@media (max-width: 520px) {
+  .results-summary {
+    padding: 20px 20px;
+  }
+  .results-ex-name { font-size: 1.2rem; }
+  .reps-number     { font-size: 3rem; }
+  .results-issue-card { padding: 16px 16px; }
+}

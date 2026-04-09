@@ -1,0 +1,125 @@
+.select-page {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg);
+  padding: 40px 20px 32px;
+  gap: 36px;
+}
+
+/* ── Header ── */
+.select-header {
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+
+.select-logo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.select-logo-icon {
+  font-size: 2rem;
+  color: var(--accent);
+  filter: drop-shadow(0 0 10px var(--accent-glow));
+}
+
+.select-logo-text {
+  font-size: 2rem;
+  font-weight: 900;
+  letter-spacing: 0.04em;
+  color: var(--text);
+}
+
+.select-subtitle {
+  font-size: 1rem;
+  color: var(--text-muted);
+  letter-spacing: 0.02em;
+}
+
+/* ── Cards grid ── */
+.exercise-cards {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 18px;
+  width: 100%;
+  max-width: 700px;
+}
+
+.exercise-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  padding: 36px 20px 28px;
+  background: var(--surface);
+  border: 2px solid var(--border);
+  border-radius: 20px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-align: center;
+  color: inherit;
+}
+
+.exercise-card:hover,
+.exercise-card:focus-visible {
+  border-color: var(--accent);
+  background: var(--surface-hover);
+  transform: translateY(-4px);
+  box-shadow: 0 10px 36px var(--accent-glow);
+  outline: none;
+}
+
+.exercise-card:active {
+  transform: translateY(-1px);
+}
+
+.card-icon {
+  font-size: 3.2rem;
+  line-height: 1;
+}
+
+.card-name {
+  font-size: 1.25rem;
+  font-weight: 800;
+  color: var(--text);
+}
+
+.card-desc {
+  font-size: 0.82rem;
+  color: var(--text-muted);
+  line-height: 1.5;
+}
+
+.card-camera {
+  font-size: 0.78rem;
+  color: var(--accent);
+  font-weight: 600;
+  margin-top: 4px;
+  background: var(--accent-dim);
+  padding: 4px 12px;
+  border-radius: 20px;
+}
+
+/* ── Footer ── */
+.select-footer {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  text-align: center;
+}
+
+/* ── Responsive ── */
+@media (max-width: 520px) {
+  .exercise-cards {
+    grid-template-columns: 1fr;
+    max-width: 360px;
+  }
+  .select-logo-text { font-size: 1.6rem; }
+  .select-logo-icon { font-size: 1.6rem; }
+}

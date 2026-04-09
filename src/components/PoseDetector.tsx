@@ -1,30 +1,63 @@
-import { useEffect, useRef, useState, useCallback } from 'react';
+import { useEffect, useRef, useCallback } from 'react';
 import {
   PoseLandmarker,
   FilesetResolver,
 } from '@mediapipe/tasks-vision';
 import { type ExerciseType, type Landmark, type PostureFeedback } from '../types';
 import { analyzeExercise } from '../utils/exerciseAnalysis';
-import { drawPose } from '../utils/poseDrawing';
+import { drawPose, drawHUD } from '../utils/poseDrawing';
 import './PoseDetector.css';
 
 interface Props {
   exercise: ExerciseType;
   onFeedback: (feedback: PostureFeedback) => void;
   onLoadingChange: (loading: boolean) => void;
+  onRepCount: (n: number) => void;
+  onIssueDetected: (issues: string[]) => void;
 }
 
-export default function PoseDetector({ exercise, onFeedback, onLoadingChange }: Props) {
-  const videoRef = useRef<HTMLVideoElement>(null);
-  const canvasRef = useRef<HTMLCanvasElement>(null);
-  const landmarkerRef = useRef<PoseLandmarker | null>(null);
-  const animFrameRef = useRef<number>(0);
+// ─── Rep counter config ───────────────────────────────────────────────────────
+type RepPhase = 'WAITING_BOTTOM' | 'AT_BOTTOM';
+
+interface RepThresholds {
+  primaryAngleIndex: number;
+  bottomThreshold: number;
+  topThreshold: number;
+}
+
+const REP_CONFIG: Record<ExerciseType, RepThresholds> = {
+  squat:    { primaryAngleIndex: 0, bottomThreshold: 100, topThreshold: 140 },
+  pushup:   { primaryAngleIndex: 0, bottomThreshold: 90,  topThreshold: 140 },
+  deadlift: { primaryAngleIndex: 0, bottomThreshold: 140, topThreshold: 160 },
+  ohpress:  { primaryAngleIndex: 0, bottomThreshold: 120, topThreshold: 155 },
+};
+
+export default function PoseDetector({
+  exercise,
+  onFeedback,
+  onLoadingChange,
+  onRepCount,
+  onIssueDetected,
+}: Props) {
+  const videoRef        = useRef<HTMLVideoElement>(null);
+  const canvasRef       = useRef<HTMLCanvasElement>(null);
+  const landmarkerRef   = useRef<PoseLandmarker | null>(null);
+  const animFrameRef    = useRef<number>(0);
   const lastVideoTimeRef = useRef(-1);
+  const modelReadyRef   = useRef(false);
 
-  const [camError, setCamError] = useState<string | null>(null);
-  const [modelLoading, setModelLoading] = useState(true);
+  // Rep counter refs — no state to avoid stale closures
+  const repPhaseRef  = useRef<RepPhase>('WAITING_BOTTOM');
+  const repCountRef  = useRef<number>(0);
 
-  // ── Load MediaPipe model ────────────────────────────────────────────────────
+  // ── Reset counter when exercise changes ──────────────────────────────────
+  useEffect(() => {
+    repPhaseRef.current  = 'WAITING_BOTTOM';
+    repCountRef.current  = 0;
+    onRepCount(0);
+  }, [exercise, onRepCount]);
+
+  // ── Load MediaPipe model ─────────────────────────────────────────────────
   useEffect(() => {
     let cancelled = false;
 
@@ -33,7 +66,6 @@ export default function PoseDetector({ exercise, onFeedback, onLoadingChange }: 
         const vision = await FilesetResolver.forVisionTasks(
           'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@latest/wasm'
         );
-
         const landmarker = await PoseLandmarker.createFromOptions(vision, {
           baseOptions: {
             modelAssetPath:
@@ -46,54 +78,47 @@ export default function PoseDetector({ exercise, onFeedback, onLoadingChange }: 
           minPosePresenceConfidence: 0.5,
           minTrackingConfidence: 0.5,
         });
-
         if (!cancelled) {
           landmarkerRef.current = landmarker;
-          setModelLoading(false);
+          modelReadyRef.current = true;
           onLoadingChange(false);
         }
       } catch (err) {
         console.error('Model load error:', err);
-        if (!cancelled) {
-          setCamError('Failed to load pose model. Check your internet connection.');
-          setModelLoading(false);
-          onLoadingChange(false);
-        }
+        if (!cancelled) onLoadingChange(false);
       }
     }
 
     loadModel();
     return () => { cancelled = true; };
-  }, []);
+  }, [onLoadingChange]);
 
-  // ── Start webcam ────────────────────────────────────────────────────────────
+  // ── Start webcam ─────────────────────────────────────────────────────────
   useEffect(() => {
     let stream: MediaStream | null = null;
 
     async function startCam() {
       try {
         stream = await navigator.mediaDevices.getUserMedia({
-          video: { width: 1280, height: 720, facingMode: 'user' },
+          video: { width: 1280, height: 720, facingMode: 'environment' },
         });
-        if (videoRef.current) {
-          videoRef.current.srcObject = stream;
-        }
+        if (videoRef.current) videoRef.current.srcObject = stream;
       } catch {
-        setCamError('Camera access denied. Please allow camera permissions and refresh.');
+        // Error handled by cam-error div below if video never loads
       }
     }
 
     startCam();
     return () => {
-      stream?.getTracks().forEach((t) => t.stop());
+      stream?.getTracks().forEach(t => t.stop());
       cancelAnimationFrame(animFrameRef.current);
     };
   }, []);
 
-  // ── Detection loop ──────────────────────────────────────────────────────────
+  // ── Detection loop ────────────────────────────────────────────────────────
   const detectPose = useCallback(() => {
-    const video = videoRef.current;
-    const canvas = canvasRef.current;
+    const video    = videoRef.current;
+    const canvas   = canvasRef.current;
     const landmarker = landmarkerRef.current;
 
     if (!video || !canvas || !landmarker || video.readyState < 2) {
@@ -101,43 +126,50 @@ export default function PoseDetector({ exercise, onFeedback, onLoadingChange }: 
       return;
     }
 
-    // Sync canvas size to video
-    if (canvas.width !== video.videoWidth || canvas.height !== video.videoHeight) {
-      canvas.width = video.videoWidth || 1280;
-      canvas.height = video.videoHeight || 720;
-    }
+    if (canvas.width  !== video.videoWidth)  canvas.width  = video.videoWidth  || 1280;
+    if (canvas.height !== video.videoHeight) canvas.height = video.videoHeight || 720;
 
     const ctx = canvas.getContext('2d');
-    if (!ctx) {
-      animFrameRef.current = requestAnimationFrame(detectPose);
-      return;
-    }
-
-    const now = performance.now();
+    if (!ctx) { animFrameRef.current = requestAnimationFrame(detectPose); return; }
 
     if (video.currentTime !== lastVideoTimeRef.current) {
       lastVideoTimeRef.current = video.currentTime;
 
       try {
-        const result = landmarker.detectForVideo(video, now);
+        const result = landmarker.detectForVideo(video, performance.now());
 
         if (result.landmarks && result.landmarks.length > 0) {
           const landmarks = result.landmarks[0] as Landmark[];
-          const feedback = analyzeExercise(exercise, landmarks);
-          onFeedback(feedback);
+          const feedback  = analyzeExercise(exercise, landmarks);
+
+          // ── Rep counting ──
+          const cfg          = REP_CONFIG[exercise];
+          const primaryAngle = feedback.angles[cfg.primaryAngleIndex]?.value;
+
+          if (primaryAngle !== null && primaryAngle !== undefined) {
+            if (repPhaseRef.current === 'WAITING_BOTTOM' && primaryAngle < cfg.bottomThreshold) {
+              repPhaseRef.current = 'AT_BOTTOM';
+            } else if (repPhaseRef.current === 'AT_BOTTOM' && primaryAngle > cfg.topThreshold) {
+              repCountRef.current += 1;
+              repPhaseRef.current = 'WAITING_BOTTOM';
+              onRepCount(repCountRef.current);
+            }
+          }
+
+          // ── Issue accumulation ──
+          if (feedback.issues.length > 0) onIssueDetected(feedback.issues);
+
+          // ── Draw ──
           drawPose(ctx, landmarks, canvas.width, canvas.height, feedback.status);
+          drawHUD(ctx, repCountRef.current, feedback, canvas.width, canvas.height);
+
+          onFeedback(feedback);
         } else {
           ctx.clearRect(0, 0, canvas.width, canvas.height);
-          onFeedback({
-            status: 'idle',
-            angles: [],
-            issues: ['No pose detected — step back so your full body is visible.'],
-            tips: [
-              'Ensure your whole body fits in the frame.',
-              'Try improving lighting in your space.',
-              'Stand 2–3 metres from the camera.',
-            ],
-          });
+          const idle: PostureFeedback = {
+            status: 'idle', angles: [], issues: [], tips: [],
+          };
+          drawHUD(ctx, repCountRef.current, idle, canvas.width, canvas.height);
         }
       } catch (e) {
         console.warn('Detection error:', e);
@@ -145,44 +177,25 @@ export default function PoseDetector({ exercise, onFeedback, onLoadingChange }: 
     }
 
     animFrameRef.current = requestAnimationFrame(detectPose);
-  }, [exercise, onFeedback]);
+  }, [exercise, onFeedback, onRepCount, onIssueDetected]);
 
   useEffect(() => {
-    if (modelLoading) return;
     animFrameRef.current = requestAnimationFrame(detectPose);
     return () => cancelAnimationFrame(animFrameRef.current);
-  }, [detectPose, modelLoading]);
-
-  // ── Render ──────────────────────────────────────────────────────────────────
-  if (camError) {
-    return (
-      <div className="cam-error">
-        <div className="cam-error-icon">⚠</div>
-        <div className="cam-error-msg">{camError}</div>
-      </div>
-    );
-  }
+  }, [detectPose]);
 
   return (
     <div className="pose-detector">
-      {modelLoading && (
-        <div className="model-loading">
-          <div className="spinner" />
-          <span>Loading AI model…</span>
-        </div>
-      )}
       <video
         ref={videoRef}
         autoPlay
         muted
         playsInline
         className="webcam-video"
-        style={{ transform: 'scaleX(-1)' }}
       />
       <canvas
         ref={canvasRef}
         className="pose-canvas"
-        style={{ transform: 'scaleX(-1)' }}
       />
     </div>
   );
