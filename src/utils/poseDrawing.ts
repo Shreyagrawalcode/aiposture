@@ -166,6 +166,62 @@ export function drawHUD(
     drawPill(ctx, angleText, width / 2, height * 0.30, smallFont, '#ffffff', 'center');
   }
 
+  // ── Warning / issue panel (bottom of screen) ──
+  if ((feedback.status === 'warning' || feedback.status === 'fix') && feedback.issues.length > 0) {
+    const issueSize = Math.max(13, Math.round(height * 0.038));
+    const issueFont = `600 ${issueSize}px 'Inter', system-ui, sans-serif`;
+    const labelSize = Math.max(11, Math.round(height * 0.028));
+    const labelFont = `bold ${labelSize}px 'Inter', system-ui, sans-serif`;
+
+    const panelPadH = 20;
+    const panelPadV = 14;
+    const lineGap   = Math.round(issueSize * 1.6);
+    const iconSize  = Math.round(height * 0.055);
+
+    // Measure widest issue line to size the panel
+    ctx.font = issueFont;
+    const maxTextWidth = Math.max(...feedback.issues.map(i => ctx.measureText(i).width));
+    const panelW = Math.min(width - 32, maxTextWidth + panelPadH * 2 + iconSize + 12);
+    const panelH = panelPadV * 2 + labelSize * 1.6 + feedback.issues.length * lineGap + 4;
+    const panelX = (width - panelW) / 2;
+    const panelY = height - panelH - 24;
+
+    // Background
+    const borderColor = feedback.status === 'fix' ? '#ff4444' : '#ffaa00';
+    ctx.fillStyle = 'rgba(0,0,0,0.75)';
+    ctx.beginPath();
+    if (ctx.roundRect) ctx.roundRect(panelX, panelY, panelW, panelH, 14);
+    else ctx.rect(panelX, panelY, panelW, panelH);
+    ctx.fill();
+
+    // Coloured left border stripe
+    ctx.fillStyle = borderColor;
+    ctx.beginPath();
+    if (ctx.roundRect) ctx.roundRect(panelX, panelY, 5, panelH, [14, 0, 0, 14]);
+    else ctx.rect(panelX, panelY, 5, panelH);
+    ctx.fill();
+
+    // Warning icon + label header
+    ctx.font = `bold ${iconSize}px serif`;
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'top';
+    ctx.fillStyle = borderColor;
+    ctx.fillText(feedback.status === 'fix' ? '✗' : '!', panelX + panelPadH, panelY + panelPadV);
+
+    ctx.font = labelFont;
+    ctx.fillStyle = borderColor;
+    const labelText = feedback.status === 'fix' ? 'FIX YOUR FORM' : 'FORM CHECK';
+    ctx.fillText(labelText, panelX + panelPadH + iconSize + 8, panelY + panelPadV + 2);
+
+    // Issue lines
+    ctx.font = issueFont;
+    ctx.fillStyle = '#ffffff';
+    const textStartY = panelY + panelPadV + labelSize * 1.8;
+    feedback.issues.forEach((issue, i) => {
+      ctx.fillText(`› ${issue}`, panelX + panelPadH, textStartY + i * lineGap);
+    });
+  }
+
   // Reset canvas state
   ctx.textAlign    = 'left';
   ctx.textBaseline = 'alphabetic';

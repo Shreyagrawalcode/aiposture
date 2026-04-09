@@ -100,7 +100,7 @@ export default function PoseDetector({
     async function startCam() {
       try {
         stream = await navigator.mediaDevices.getUserMedia({
-          video: { width: 1280, height: 720, facingMode: 'environment' },
+          video: { width: 1280, height: 720, facingMode: 'user' },
         });
         if (videoRef.current) videoRef.current.srcObject = stream;
       } catch {
@@ -192,6 +192,7 @@ export default function PoseDetector({
         muted
         playsInline
         className="webcam-video"
+        style={{ transform: 'scaleX(-1)' }}
       />
       <canvas
         ref={canvasRef}
