@@ -23,6 +23,19 @@ function analyzeSquat(lm: Landmark[]): PostureFeedback {
   const shoulder = side === 'left' ? lm[11] : lm[12];
   const hipAngle = calculateAngle(shoulder, hip, knee);
 
+  // If person is just standing upright (knee > 155 AND hip > 155), show idle not red
+  if (kneeAngle > 155 && hipAngle > 155) {
+    return {
+      status: 'idle',
+      angles: [
+        { label: 'Knee Angle', value: kneeAngle, unit: '°' },
+        { label: 'Hip Angle', value: hipAngle, unit: '°' },
+      ],
+      issues: [],
+      tips: ['Start squatting when you\'re ready — the AI will track your form.'],
+    };
+  }
+
   // Knee-over-toe: in normalised coords, if knee.x > ankle.x significantly (mirrored)
   const kneePastToe = Math.abs(knee.x - ankle.x) > 0.08;
 
@@ -36,7 +49,7 @@ function analyzeSquat(lm: Landmark[]): PostureFeedback {
     status = 'warning';
     issues.push('Squat deeper — aim for thighs parallel or below');
   } else {
-    status = 'fix';
+    status = 'warning';
     issues.push('Not squatting deep enough — bend your knees more');
   }
 
@@ -145,6 +158,16 @@ function analyzePushup(lm: Landmark[]): PostureFeedback {
   const issues: string[] = [];
   let status: PostureStatus = 'good';
 
+  // If arms are nearly straight and no hip data indicates push-up position, treat as idle
+  if (elbowAngle > 155 && !hipSag && !hipPike) {
+    return {
+      status: 'idle',
+      angles: [{ label: 'Elbow Angle', value: elbowAngle, unit: '°' }],
+      issues: [],
+      tips: ['Get into push-up position — the AI will track your form.'],
+    };
+  }
+
   if (elbowAngle < 75) {
     status = 'good';
   } else if (elbowAngle <= 110) {
@@ -153,7 +176,7 @@ function analyzePushup(lm: Landmark[]): PostureFeedback {
     status = 'warning';
     issues.push('Lower your chest closer to the floor');
   } else {
-    status = 'fix';
+    status = 'warning';
     issues.push('Arms barely bending — perform a full range push-up');
   }
 
@@ -223,6 +246,19 @@ function analyzeDeadlift(lm: Landmark[]): PostureFeedback {
   // Knee bend
   const ankle = leftVisible ? lm[27] : lm[28];
   const kneeAngle = calculateAngle(hip, knee, ankle);
+
+  // Standing upright — not doing a deadlift yet
+  if (backAngle > 165 && kneeAngle > 165) {
+    return {
+      status: 'idle',
+      angles: [
+        { label: 'Back Angle', value: backAngle, unit: '°' },
+        { label: 'Knee Bend', value: kneeAngle, unit: '°' },
+      ],
+      issues: [],
+      tips: ['Start your deadlift when ready — the AI will track your form.'],
+    };
+  }
 
   const issues: string[] = [];
   let status: PostureStatus;
@@ -317,6 +353,16 @@ function analyzeOHPress(lm: Landmark[]): PostureFeedback {
     excessiveLean = Math.abs(hip.x - shoulder.x) > 0.12;
   }
 
+  // If arms are down at sides (wrist below shoulder, low elbow angle), treat as idle
+  if (elbowAngle < 90 && !wristAboveShoulder) {
+    return {
+      status: 'idle',
+      angles: [{ label: 'Elbow Angle', value: elbowAngle, unit: '°' }],
+      issues: [],
+      tips: ['Raise the bar to shoulder height to begin — the AI will track your form.'],
+    };
+  }
+
   const issues: string[] = [];
   let status: PostureStatus = 'good';
 
@@ -327,7 +373,7 @@ function analyzeOHPress(lm: Landmark[]): PostureFeedback {
     status = 'warning';
     issues.push('Extend arms fully overhead — squeeze at lockout');
   } else {
-    status = 'fix';
+    status = 'warning';
     issues.push('Arms not reaching overhead — press all the way up');
   }
 

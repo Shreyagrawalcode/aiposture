@@ -18,10 +18,10 @@ const POSE_CONNECTIONS: [number, number][] = [
 ];
 
 const STATUS_COLORS = {
-  good: '#00ff88',
-  warning: '#ffaa00',
-  fix: '#ff3b3b',
-  idle: '#4488ff',
+  good: '#00e68a',
+  warning: '#ffb84d',
+  fix: '#ff5c5c',
+  idle: '#5c9eff',
 };
 
 export function drawPose(
@@ -88,10 +88,10 @@ export function drawPose(
 // ─── HUD overlay ─────────────────────────────────────────────────────────────
 
 const HUD_COLORS: Record<PostureStatus, string> = {
-  good:    '#00ff88',
-  warning: '#ffaa00',
-  fix:     '#ff4444',
-  idle:    '#4488ff',
+  good:    '#00e68a',
+  warning: '#ffb84d',
+  fix:     '#ff5c5c',
+  idle:    '#5c9eff',
 };
 
 const STATUS_LABEL: Record<PostureStatus, string> = {

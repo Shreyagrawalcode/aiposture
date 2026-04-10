@@ -3,7 +3,7 @@ import {
   PoseLandmarker,
   FilesetResolver,
 } from '@mediapipe/tasks-vision';
-import { type ExerciseType, type Landmark, type PostureFeedback } from '../types';
+import { type ExerciseType, type Landmark, type PostureFeedback, type PostureStatus } from '../types';
 import { analyzeExercise } from '../utils/exerciseAnalysis';
 import { drawPose, drawHUD } from '../utils/poseDrawing';
 import './PoseDetector.css';
@@ -49,6 +49,12 @@ export default function PoseDetector({
   // Rep counter refs — no state to avoid stale closures
   const repPhaseRef  = useRef<RepPhase>('WAITING_BOTTOM');
   const repCountRef  = useRef<number>(0);
+
+  // Frame throttling — only run detection every N-th frame for speed
+  const frameCountRef     = useRef(0);
+  const cachedLandmarksRef = useRef<Landmark[] | null>(null);
+  const cachedFeedbackRef  = useRef<PostureFeedback | null>(null);
+  const DETECT_EVERY       = 2; // detect every 2nd frame, draw cached on others
 
   // ── Reset counter when exercise changes ──────────────────────────────────
   useEffect(() => {
@@ -134,46 +140,57 @@ export default function PoseDetector({
 
     if (video.currentTime !== lastVideoTimeRef.current) {
       lastVideoTimeRef.current = video.currentTime;
+      frameCountRef.current += 1;
 
-      try {
-        const result = landmarker.detectForVideo(video, performance.now());
+      const shouldDetect = frameCountRef.current % DETECT_EVERY === 0;
 
-        if (result.landmarks && result.landmarks.length > 0) {
-          const landmarks = result.landmarks[0] as Landmark[];
-          const feedback  = analyzeExercise(exercise, landmarks);
+      if (shouldDetect) {
+        try {
+          const result = landmarker.detectForVideo(video, performance.now());
 
-          // ── Rep counting ──
-          const cfg          = REP_CONFIG[exercise];
-          const primaryAngle = feedback.angles[cfg.primaryAngleIndex]?.value;
+          if (result.landmarks && result.landmarks.length > 0) {
+            const landmarks = result.landmarks[0] as Landmark[];
+            const feedback  = analyzeExercise(exercise, landmarks);
 
-          if (primaryAngle !== null && primaryAngle !== undefined) {
-            if (repPhaseRef.current === 'WAITING_BOTTOM' && primaryAngle < cfg.bottomThreshold) {
-              repPhaseRef.current = 'AT_BOTTOM';
-            } else if (repPhaseRef.current === 'AT_BOTTOM' && primaryAngle > cfg.topThreshold) {
-              repCountRef.current += 1;
-              repPhaseRef.current = 'WAITING_BOTTOM';
-              onRepCount(repCountRef.current);
+            cachedLandmarksRef.current = landmarks;
+            cachedFeedbackRef.current  = feedback;
+
+            // ── Rep counting ──
+            const cfg          = REP_CONFIG[exercise];
+            const primaryAngle = feedback.angles[cfg.primaryAngleIndex]?.value;
+
+            if (primaryAngle !== null && primaryAngle !== undefined) {
+              if (repPhaseRef.current === 'WAITING_BOTTOM' && primaryAngle < cfg.bottomThreshold) {
+                repPhaseRef.current = 'AT_BOTTOM';
+              } else if (repPhaseRef.current === 'AT_BOTTOM' && primaryAngle > cfg.topThreshold) {
+                repCountRef.current += 1;
+                repPhaseRef.current = 'WAITING_BOTTOM';
+                onRepCount(repCountRef.current);
+              }
             }
+
+            // ── Issue accumulation (only non-idle) ──
+            if (feedback.status !== 'idle' && feedback.issues.length > 0) onIssueDetected(feedback.issues);
+
+            onFeedback(feedback);
+          } else {
+            cachedLandmarksRef.current = null;
+            cachedFeedbackRef.current  = { status: 'idle' as PostureStatus, angles: [], issues: [], tips: [] };
           }
-
-          // ── Issue accumulation ──
-          if (feedback.issues.length > 0) onIssueDetected(feedback.issues);
-
-          // ── Draw ──
-          drawPose(ctx, landmarks, canvas.width, canvas.height, feedback.status);
-          drawHUD(ctx, repCountRef.current, feedback, canvas.width, canvas.height);
-
-          onFeedback(feedback);
-        } else {
-          ctx.clearRect(0, 0, canvas.width, canvas.height);
-          const idle: PostureFeedback = {
-            status: 'idle', angles: [], issues: [], tips: [],
-          };
-          drawHUD(ctx, repCountRef.current, idle, canvas.width, canvas.height);
+        } catch (e) {
+          console.warn('Detection error:', e);
         }
-      } catch (e) {
-        console.warn('Detection error:', e);
       }
+
+      // ── Always draw from cache (smooth visuals even on skipped frames) ──
+      const lm = cachedLandmarksRef.current;
+      const fb = cachedFeedbackRef.current ?? { status: 'idle' as PostureStatus, angles: [], issues: [], tips: [] };
+      if (lm) {
+        drawPose(ctx, lm, canvas.width, canvas.height, fb.status);
+      } else {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+      }
+      drawHUD(ctx, repCountRef.current, fb, canvas.width, canvas.height);
     }
 
     animFrameRef.current = requestAnimationFrame(detectPose);
