@@ -1,27 +1,24 @@
 import { type Landmark, type PostureFeedback, type PostureStatus } from '../types';
 
-// MediaPipe Pose landmark connections
+// Body-only connections (skip face landmarks 0-10 for cleaner look)
 const POSE_CONNECTIONS: [number, number][] = [
-  // Face
-  [0, 1], [1, 2], [2, 3], [3, 7],
-  [0, 4], [4, 5], [5, 6], [6, 8],
   // Torso
   [11, 12], [11, 23], [12, 24], [23, 24],
   // Left arm
-  [11, 13], [13, 15], [15, 17], [15, 19], [15, 21], [17, 19],
+  [11, 13], [13, 15],
   // Right arm
-  [12, 14], [14, 16], [16, 18], [16, 20], [16, 22], [18, 20],
+  [12, 14], [14, 16],
   // Left leg
-  [23, 25], [25, 27], [27, 29], [27, 31], [29, 31],
+  [23, 25], [25, 27],
   // Right leg
-  [24, 26], [26, 28], [28, 30], [28, 32], [30, 32],
+  [24, 26], [26, 28],
 ];
 
-const STATUS_COLORS = {
-  good: '#00e68a',
+const STATUS_COLORS: Record<PostureStatus, string> = {
+  good:    '#00e68a',
   warning: '#ffb84d',
-  fix: '#ff5c5c',
-  idle: '#5c9eff',
+  fix:     '#ff5c5c',
+  idle:    '#5c9eff',
 };
 
 export function drawPose(
@@ -29,13 +26,11 @@ export function drawPose(
   landmarks: Landmark[],
   width: number,
   height: number,
-  status: 'good' | 'warning' | 'fix' | 'idle'
+  status: PostureStatus
 ): void {
   const color = STATUS_COLORS[status];
-  const dimColor = color + '88'; // semi-transparent for connections
 
   ctx.clearRect(0, 0, width, height);
-
   if (!landmarks || landmarks.length === 0) return;
 
   const toPixel = (lm: Landmark) => ({
@@ -43,9 +38,9 @@ export function drawPose(
     y: lm.y * height,
   });
 
-  // Draw connections
-  ctx.lineWidth = 2.5;
+  // Draw connections with glow
   ctx.lineCap = 'round';
+  ctx.lineJoin = 'round';
 
   for (const [i, j] of POSE_CONNECTIONS) {
     const a = landmarks[i];
@@ -56,30 +51,40 @@ export function drawPose(
     const pa = toPixel(a);
     const pb = toPixel(b);
 
+    // Outer glow line
     ctx.beginPath();
-    ctx.strokeStyle = dimColor;
+    ctx.strokeStyle = color + '30';
+    ctx.lineWidth = 8;
+    ctx.moveTo(pa.x, pa.y);
+    ctx.lineTo(pb.x, pb.y);
+    ctx.stroke();
+
+    // Inner solid line
+    ctx.beginPath();
+    ctx.strokeStyle = color + 'cc';
+    ctx.lineWidth = 3;
     ctx.moveTo(pa.x, pa.y);
     ctx.lineTo(pb.x, pb.y);
     ctx.stroke();
   }
 
-  // Draw landmarks
-  for (let i = 0; i < landmarks.length; i++) {
+  // Draw key joints only (skip face, hands, feet)
+  const keyJoints = [11, 12, 13, 14, 15, 16, 23, 24, 25, 26, 27, 28];
+  for (const i of keyJoints) {
     const lm = landmarks[i];
     if (!lm || (lm.visibility ?? 1) < 0.4) continue;
 
     const p = toPixel(lm);
-    const radius = i < 11 ? 3 : 5; // smaller dots for face
 
-    // Outer glow ring
+    // Glow
     ctx.beginPath();
-    ctx.arc(p.x, p.y, radius + 2, 0, 2 * Math.PI);
-    ctx.fillStyle = color + '44';
+    ctx.arc(p.x, p.y, 8, 0, 2 * Math.PI);
+    ctx.fillStyle = color + '25';
     ctx.fill();
 
-    // Inner dot
+    // Dot
     ctx.beginPath();
-    ctx.arc(p.x, p.y, radius, 0, 2 * Math.PI);
+    ctx.arc(p.x, p.y, 4, 0, 2 * Math.PI);
     ctx.fillStyle = color;
     ctx.fill();
   }
@@ -87,29 +92,16 @@ export function drawPose(
 
 // ─── HUD overlay ─────────────────────────────────────────────────────────────
 
-const HUD_COLORS: Record<PostureStatus, string> = {
-  good:    '#00e68a',
-  warning: '#ffb84d',
-  fix:     '#ff5c5c',
-  idle:    '#5c9eff',
-};
-
-const STATUS_LABEL: Record<PostureStatus, string> = {
-  good:    'GOOD',
-  warning: 'CHECK',
-  fix:     'FIX',
-  idle:    '',
-};
-
-function drawPill(
+function drawGlassPill(
   ctx: CanvasRenderingContext2D,
   text: string,
   x: number,
   y: number,
   font: string,
   textColor: string,
-  align: 'left' | 'center'
-): void {
+  align: 'left' | 'center',
+  bgAlpha = 0.5
+): { width: number; height: number } {
   ctx.font = font;
   ctx.textAlign = align;
   ctx.textBaseline = 'top';
@@ -117,17 +109,17 @@ function drawPill(
   const metrics = ctx.measureText(text);
   const tw = metrics.width;
   const th = metrics.actualBoundingBoxDescent + metrics.actualBoundingBoxAscent;
-  const pH = 10, pV = 7;
+  const pH = 14, pV = 9;
 
   const boxX = align === 'center' ? x - tw / 2 - pH : x - pH;
   const boxY = y - pV;
   const boxW = tw + pH * 2;
   const boxH = th + pV * 2 + 4;
 
-  ctx.fillStyle = 'rgba(0,0,0,0.60)';
+  ctx.fillStyle = `rgba(0,0,0,${bgAlpha})`;
   ctx.beginPath();
   if (ctx.roundRect) {
-    ctx.roundRect(boxX, boxY, boxW, boxH, 10);
+    ctx.roundRect(boxX, boxY, boxW, boxH, 12);
   } else {
     ctx.rect(boxX, boxY, boxW, boxH);
   }
@@ -135,94 +127,51 @@ function drawPill(
 
   ctx.fillStyle = textColor;
   ctx.fillText(text, x, y);
+
+  return { width: boxW, height: boxH };
 }
 
 export function drawHUD(
   ctx: CanvasRenderingContext2D,
-  repCount: number,
+  _repCount: number,
   feedback: PostureFeedback,
   width: number,
   height: number
 ): void {
-  const bigSize   = Math.max(28, Math.round(height * 0.09));
-  const smallSize = Math.max(16, Math.round(height * 0.048));
-  const bigFont   = `bold ${bigSize}px 'Inter', system-ui, sans-serif`;
-  const smallFont = `bold ${smallSize}px 'Inter', system-ui, sans-serif`;
-  const color     = HUD_COLORS[feedback.status];
+  const color = STATUS_COLORS[feedback.status];
 
-  // ── REPS counter (top-left) ──
-  drawPill(ctx, `REPS  ${repCount}`, 28, 24, bigFont, color, 'left');
-
-  // ── Status label (centred, ~18% from top) ──
-  const label = STATUS_LABEL[feedback.status];
-  if (label) {
-    drawPill(ctx, label, width / 2, height * 0.18, bigFont, color, 'center');
+  // ── Status badge (top-centre) ──
+  if (feedback.status !== 'idle') {
+    const statusSize = Math.max(20, Math.round(height * 0.055));
+    const statusFont = `800 ${statusSize}px 'Inter', system-ui, sans-serif`;
+    const label = feedback.status === 'good' ? 'GOOD FORM' : feedback.status === 'warning' ? 'CHECK FORM' : 'FIX FORM';
+    drawGlassPill(ctx, label, width / 2, 24, statusFont, color, 'center');
   }
 
-  // ── Primary angle (centred, ~30% from top) ──
+  // ── Form score (top-right) ──
+  if (feedback.formScore > 0) {
+    const scoreSize = Math.max(16, Math.round(height * 0.042));
+    const scoreFont = `700 ${scoreSize}px 'Inter', system-ui, sans-serif`;
+    drawGlassPill(ctx, `${feedback.formScore}%`, width - 24, 24, scoreFont, color, 'left');
+  }
+
+  // ── Primary angle (below status) ──
   const primary = feedback.angles[0];
-  if (primary && primary.value !== null) {
-    const angleText = `${primary.label}  ${primary.value}${primary.unit}`;
-    drawPill(ctx, angleText, width / 2, height * 0.30, smallFont, '#ffffff', 'center');
+  if (primary && primary.value !== null && feedback.status !== 'idle') {
+    const angleSize = Math.max(14, Math.round(height * 0.038));
+    const angleFont = `600 ${angleSize}px 'Inter', system-ui, sans-serif`;
+    drawGlassPill(ctx, `${primary.label}  ${primary.value}${primary.unit}`, width / 2, height * 0.14, angleFont, '#ffffffcc', 'center', 0.4);
   }
 
-  // ── Warning / issue panel (bottom of screen) ──
-  if ((feedback.status === 'warning' || feedback.status === 'fix') && feedback.issues.length > 0) {
-    const issueSize = Math.max(13, Math.round(height * 0.038));
-    const issueFont = `600 ${issueSize}px 'Inter', system-ui, sans-serif`;
-    const labelSize = Math.max(11, Math.round(height * 0.028));
-    const labelFont = `bold ${labelSize}px 'Inter', system-ui, sans-serif`;
-
-    const panelPadH = 20;
-    const panelPadV = 14;
-    const lineGap   = Math.round(issueSize * 1.6);
-    const iconSize  = Math.round(height * 0.055);
-
-    // Measure widest issue line to size the panel
-    ctx.font = issueFont;
-    const maxTextWidth = Math.max(...feedback.issues.map(i => ctx.measureText(i).width));
-    const panelW = Math.min(width - 32, maxTextWidth + panelPadH * 2 + iconSize + 12);
-    const panelH = panelPadV * 2 + labelSize * 1.6 + feedback.issues.length * lineGap + 4;
-    const panelX = (width - panelW) / 2;
-    const panelY = height - panelH - 24;
-
-    // Background
-    const borderColor = feedback.status === 'fix' ? '#ff4444' : '#ffaa00';
-    ctx.fillStyle = 'rgba(0,0,0,0.75)';
-    ctx.beginPath();
-    if (ctx.roundRect) ctx.roundRect(panelX, panelY, panelW, panelH, 14);
-    else ctx.rect(panelX, panelY, panelW, panelH);
-    ctx.fill();
-
-    // Coloured left border stripe
-    ctx.fillStyle = borderColor;
-    ctx.beginPath();
-    if (ctx.roundRect) ctx.roundRect(panelX, panelY, 5, panelH, [14, 0, 0, 14]);
-    else ctx.rect(panelX, panelY, 5, panelH);
-    ctx.fill();
-
-    // Warning icon + label header
-    ctx.font = `bold ${iconSize}px serif`;
-    ctx.textAlign = 'left';
-    ctx.textBaseline = 'top';
-    ctx.fillStyle = borderColor;
-    ctx.fillText(feedback.status === 'fix' ? '✗' : '!', panelX + panelPadH, panelY + panelPadV);
-
-    ctx.font = labelFont;
-    ctx.fillStyle = borderColor;
-    const labelText = feedback.status === 'fix' ? 'FIX YOUR FORM' : 'FORM CHECK';
-    ctx.fillText(labelText, panelX + panelPadH + iconSize + 8, panelY + panelPadV + 2);
-
-    // Issue lines
-    ctx.font = issueFont;
-    ctx.fillStyle = '#ffffff';
-    const textStartY = panelY + panelPadV + labelSize * 1.8;
-    feedback.issues.forEach((issue, i) => {
-      ctx.fillText(`› ${issue}`, panelX + panelPadH, textStartY + i * lineGap);
-    });
+  // ── Coach message (bottom-centre, above the bottom bar) ──
+  if (feedback.coachMessage) {
+    const msgSize = Math.max(14, Math.round(height * 0.04));
+    const msgFont = `600 ${msgSize}px 'Inter', system-ui, sans-serif`;
+    const msgColor = feedback.status === 'idle' ? '#ffffffaa' : color;
+    // Position above the bottom bar (which is ~70px from bottom)
+    drawGlassPill(ctx, feedback.coachMessage, width / 2, height - 100, msgFont, msgColor, 'center', 0.65);
   }
 
-  // Reset canvas state
-  ctx.textAlign    = 'left';
+  ctx.textAlign = 'left';
   ctx.textBaseline = 'alphabetic';
 }

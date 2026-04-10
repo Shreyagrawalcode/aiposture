@@ -6,70 +6,66 @@ interface Props {
   onTryAgain: () => void;
 }
 
-// ─── Concise feedback for every issue string ─────────────────────────────────
-const ISSUE_DETAILS: Record<string, { fix: string }> = {
-  // ── Squat ──
-  'Squat deeper — aim for thighs parallel or below': {
-    fix: 'Sit lower until thighs hit parallel. Try heel-elevated goblet squats to build depth.',
-  },
-  'Not squatting deep enough — bend your knees more': {
-    fix: 'Imagine sitting onto a low chair. Practice box squats to find the right depth.',
-  },
-  'Hinge your hips back — avoid staying too upright': {
-    fix: 'Push hips back first, then bend knees. Your torso should lean forward slightly.',
-  },
-  'Knees caving inward — push knees out over toes': {
-    fix: 'Drive knees outward the whole time. Band squats help train this pattern.',
-  },
-  'Keep knees tracking over toes, not behind them': {
-    fix: 'Let knees travel forward naturally — spread the floor with your feet.',
-  },
+// ─── Concise fix for every issue ─────────────────────────────────────────────
+const ISSUE_FIXES: Record<string, string> = {
+  // Squat
+  'Go deeper — sit until thighs are parallel':
+    'Practice box squats. Elevate heels if ankle mobility is limiting.',
+  'Almost there — drop a few more inches':
+    'You\'re close! Hold the bottom for 2s to build confidence at depth.',
+  'Hinge hips back — don\'t stay so upright':
+    'Push hips back first, then bend knees. Slight forward lean is normal.',
+  'Knees caving in — push them out':
+    'Use a band above knees during warm-up. Focus on lateral band walks.',
+  'Track knees over your toes':
+    'Spread the floor with your feet. External rotation = stable knees.',
 
-  // ── Push-up / Plank ──
-  'Lower your chest closer to the floor': {
-    fix: 'Go all the way down until your chest nearly touches. Use incline push-ups to build up.',
-  },
-  'Arms barely bending — perform a full range push-up': {
-    fix: 'Start on knees or a bench — full range of motion matters more than difficulty.',
-  },
-  'Hips sagging — squeeze glutes and brace your core': {
-    fix: 'Squeeze glutes hard and brace abs. Your body should be a straight line head to heels.',
-  },
-  'Hips too high — lower into a straight plank line': {
-    fix: 'Drop hips down, engage quads, tailbone slightly tucked. Think rigid plank.',
-  },
+  // Push-up
+  'Bend your arms more — full ROM':
+    'Start on a bench or knees. Full range of motion > difficulty.',
+  'Lower your chest closer to the floor':
+    'Chest should nearly touch the floor. Try push-up handles for depth.',
+  'Hips sagging — squeeze glutes & brace':
+    'Squeeze glutes + brace abs before every rep. Think rigid plank.',
+  'Hips too high — flatten into plank':
+    'Drop hips, engage quads, tuck tailbone slightly down.',
 
-  // ── Deadlift ──
-  'Back rounding — brace your lats and keep a neutral spine': {
-    fix: 'Deep breath, brace core 360\u00b0, pull lats tight. Drop weight if you can\'t stay neutral.',
-  },
-  'Severe back rounding — stop and reset with lighter weight': {
-    fix: 'Stop now. Go lighter, practice Romanian deadlifts to rebuild the hinge pattern.',
-  },
-  'Bend your knees more at the start — this is not a stiff-leg deadlift': {
-    fix: 'Set hips lower at the start. Think "push the floor away" not "pull the bar up".',
-  },
-  'Excessive forward lean — drive your hips back, not down': {
-    fix: 'Hips back, chest up, bar close to body. Keep shoulders over or just ahead of the bar.',
-  },
+  // Deadlift
+  'Back rounding badly — reset now':
+    'Stop. Go lighter. Practice Romanian deadlifts to rebuild pattern.',
+  'Keep your spine neutral — chest up':
+    'Brace core 360°, pull lats tight, proud chest. Drop weight if needed.',
+  'Bend knees more at the start':
+    'Set hips lower. Think "push the floor away" not "pull the bar".',
+  'Too much forward lean — hips back':
+    'Hips back, chest up, bar touching legs the whole way.',
 
-  // ── Overhead Press ──
-  'Extend arms fully overhead — squeeze at lockout': {
-    fix: 'Lock out elbows fully and shrug at the top. Drop weight if you can\'t reach lockout.',
-  },
-  'Arms not reaching overhead — press all the way up': {
-    fix: 'Foam roll your upper back and stretch chest. Use lighter weight for full ROM.',
-  },
-  'Wrists drifting sideways — keep them stacked over shoulders': {
-    fix: 'Press straight up in a vertical line. Try a slightly narrower grip.',
-  },
-  'Get your wrists above your ears at the top': {
-    fix: 'Press back and up, not just up. Biceps should finish near your ears.',
-  },
-  'Excessive back lean — engage core and keep hips under bar': {
-    fix: 'Brace core, squeeze glutes, stay vertical. If you lean, the weight is too heavy.',
-  },
+  // OHP
+  'Press all the way up — full lockout':
+    'Lock elbows and shrug at top. Use lighter weight for full ROM.',
+  'Extend more — squeeze at the top':
+    'Almost there — drive head through your arms at lockout.',
+  'Keep wrists stacked over shoulders':
+    'Press in a straight vertical line. Slightly narrower grip helps.',
+  'Get wrists above your ears':
+    'Think "back and up" not just up. Biceps should touch ears.',
+  'Too much lean — brace your core':
+    'Squeeze glutes, brace abs, stay vertical. If leaning = too heavy.',
 };
+
+function getScoreLabel(score: number): string {
+  if (score >= 90) return 'Elite';
+  if (score >= 75) return 'Strong';
+  if (score >= 60) return 'Decent';
+  if (score >= 40) return 'Needs work';
+  return 'Keep practicing';
+}
+
+function getScoreColor(score: number): string {
+  if (score >= 80) return 'score-great';
+  if (score >= 60) return 'score-ok';
+  return 'score-low';
+}
 
 export default function ResultsPage({ results, onTryAgain }: Props) {
   const ex = EXERCISES.find(e => e.id === results.exercise);
@@ -81,17 +77,37 @@ export default function ResultsPage({ results, onTryAgain }: Props) {
           <span className="results-logo-icon">◈</span>
           <span className="results-logo-text">PostureAI</span>
         </div>
+        <span className="results-done-label">Session Complete</span>
       </header>
 
-      {/* ── Summary card ── */}
-      <div className="results-summary">
-        <div className="results-ex-info">
-          <span className="results-ex-icon">{ex?.icon}</span>
-          <span className="results-ex-name">{ex?.label}</span>
+      {/* ── Stats row ── */}
+      <div className="results-stats">
+        <div className="stat-card">
+          <span className="stat-icon">{ex?.icon}</span>
+          <span className="stat-value">{ex?.label}</span>
+          <span className="stat-label">Exercise</span>
         </div>
-        <div className="results-reps-block">
-          <span className="reps-number">{results.repCount}</span>
-          <span className="reps-label">REPS</span>
+        <div className="stat-card stat-card-primary">
+          <span className="stat-value stat-reps">{results.repCount}</span>
+          <span className="stat-label">Reps</span>
+        </div>
+        <div className="stat-card">
+          <span className={`stat-value ${getScoreColor(results.avgScore)}`}>{results.avgScore}%</span>
+          <span className="stat-label">{getScoreLabel(results.avgScore)}</span>
+        </div>
+      </div>
+
+      {/* ── Score bar ── */}
+      <div className="score-bar-container">
+        <div className="score-bar-track">
+          <div
+            className={`score-bar-fill ${getScoreColor(results.avgScore)}`}
+            style={{ width: `${Math.max(results.avgScore, 3)}%` }}
+          />
+        </div>
+        <div className="score-bar-labels">
+          <span>Best: {results.bestScore}%</span>
+          <span>Avg: {results.avgScore}%</span>
         </div>
       </div>
 
@@ -104,17 +120,18 @@ export default function ResultsPage({ results, onTryAgain }: Props) {
       ) : (
         <div className="results-issues-section">
           <h2 className="results-section-title">
-            Things to work on ({results.issues.length})
+            Things to work on
           </h2>
           <div className="results-issues-list">
             {results.issues.map((issue, i) => {
-              const detail = ISSUE_DETAILS[issue];
+              const fix = ISSUE_FIXES[issue];
               return (
                 <div key={i} className="results-issue-card">
-                  <div className="issue-card-title">{issue}</div>
-                  {detail && (
-                    <p className="issue-card-fix">{detail.fix}</p>
-                  )}
+                  <div className="issue-card-number">{i + 1}</div>
+                  <div className="issue-card-content">
+                    <div className="issue-card-title">{issue}</div>
+                    {fix && <p className="issue-card-fix">{fix}</p>}
+                  </div>
                 </div>
               );
             })}
@@ -122,9 +139,11 @@ export default function ResultsPage({ results, onTryAgain }: Props) {
         </div>
       )}
 
-      <button className="try-again-btn" onClick={onTryAgain}>
-        Do Again
-      </button>
+      <div className="results-actions">
+        <button className="try-again-btn" onClick={onTryAgain}>
+          Go Again
+        </button>
+      </div>
     </div>
   );
 }

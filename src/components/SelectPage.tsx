@@ -6,10 +6,10 @@ interface Props {
 }
 
 const CAMERA_HINTS: Record<ExerciseType, string> = {
-  squat:    'Side profile · 2–3 m away',
-  pushup:   'Side profile · 2–3 m away',
-  deadlift: 'Side profile · 2–3 m away',
-  ohpress:  'Face the camera · 2 m away',
+  squat:    'Side view · 2–3 m',
+  pushup:   'Side view · 2–3 m',
+  deadlift: 'Side view · 2–3 m',
+  ohpress:  'Front view · 2 m',
 };
 
 export default function SelectPage({ onStart }: Props) {
@@ -20,7 +20,8 @@ export default function SelectPage({ onStart }: Props) {
           <span className="select-logo-icon">◈</span>
           <span className="select-logo-text">PostureAI</span>
         </div>
-        <p className="select-subtitle">Choose an exercise to start your session</p>
+        <p className="select-tagline">Real-time AI form coach</p>
+        <p className="select-subtitle">Pick an exercise to start</p>
       </header>
 
       <div className="exercise-cards">
@@ -32,14 +33,16 @@ export default function SelectPage({ onStart }: Props) {
           >
             <span className="card-icon">{ex.icon}</span>
             <span className="card-name">{ex.label}</span>
+            <span className="card-muscles">{ex.muscles}</span>
             <span className="card-desc">{ex.description}</span>
-            <span className="card-camera">📷 {CAMERA_HINTS[ex.id]}</span>
+            <span className="card-camera">{CAMERA_HINTS[ex.id]}</span>
           </button>
         ))}
       </div>
 
       <footer className="select-footer">
-        AI runs entirely in your browser — no data is uploaded.
+        <span className="footer-badge">100% private</span>
+        AI runs in your browser — zero data uploaded
       </footer>
     </div>
   );
