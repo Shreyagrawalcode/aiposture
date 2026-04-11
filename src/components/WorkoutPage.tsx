@@ -1,4 +1,6 @@
+import { useEffect, useState, useCallback } from 'react';
 import { type ExerciseType, type PostureFeedback, EXERCISES } from '../types';
+import { useVoiceCoach } from '../hooks/useVoiceCoach';
 import PoseDetector from './PoseDetector';
 import './WorkoutPage.css';
 
@@ -24,6 +26,29 @@ export default function WorkoutPage({
   const ex = EXERCISES.find(e => e.id === exercise);
   const status = feedback?.status ?? 'idle';
   const score = feedback?.formScore ?? 0;
+  const [voiceOn, setVoiceOn] = useState(true);
+
+  const { announceRep, announceIssue, announceGoodForm, toggle } = useVoiceCoach();
+
+  // Voice: announce reps
+  useEffect(() => {
+    announceRep(repCount);
+  }, [repCount, announceRep]);
+
+  // Voice: announce issues or good form
+  useEffect(() => {
+    if (!feedback) return;
+    if (feedback.status === 'fix' || feedback.status === 'warning') {
+      announceIssue(feedback);
+    } else if (feedback.status === 'good') {
+      announceGoodForm(feedback);
+    }
+  }, [feedback, announceIssue, announceGoodForm]);
+
+  const handleToggleVoice = useCallback(() => {
+    const nowOn = toggle();
+    setVoiceOn(nowOn);
+  }, [toggle]);
 
   const statusClass = `bottom-bar-status status-${status}`;
 
@@ -37,10 +62,15 @@ export default function WorkoutPage({
         onIssueDetected={onIssueDetected}
       />
 
-      {/* Top bar */}
-      <button className="end-workout-btn" onClick={onEndWorkout}>
-        End
-      </button>
+      {/* Top controls */}
+      <div className="top-controls">
+        <button className="top-pill-btn voice-toggle" onClick={handleToggleVoice} title={voiceOn ? 'Mute coach' : 'Unmute coach'}>
+          {voiceOn ? '\u{1F50A}' : '\u{1F507}'}
+        </button>
+        <button className="top-pill-btn end-workout-btn" onClick={onEndWorkout}>
+          End
+        </button>
+      </div>
 
       {/* Bottom rep bar */}
       <div className="bottom-bar">

@@ -77,7 +77,7 @@ export default function ResultsPage({ results, onTryAgain }: Props) {
           <span className="results-logo-icon">◈</span>
           <span className="results-logo-text">PostureAI</span>
         </div>
-        <span className="results-done-label">Session Complete</span>
+        <span className="results-done-label">Complete</span>
       </header>
 
       {/* ── Stats row ── */}

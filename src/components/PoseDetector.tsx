@@ -81,6 +81,9 @@ const REP_CONFIGS: Record<ExerciseType, RepConfig> = {
 // Simple rolling average for angle smoothing
 const SMOOTH_WINDOW = 4;
 
+// Velocity tracking for dynamic movement
+const VELOCITY_WINDOW = 3;
+
 export default function PoseDetector({
   exercise,
   onFeedback,
@@ -100,6 +103,10 @@ export default function PoseDetector({
   const bottomEnteredAt = useRef<number>(0);
   const lastRepAt       = useRef<number>(0);
   const angleBuffer     = useRef<number[]>([]);
+  // Velocity tracking: stores recent smoothed angles to compute direction
+  const velocityBuffer  = useRef<number[]>([]);
+  const peakAngle       = useRef<number>(0);
+  const troughAngle     = useRef<number>(999);
 
   // Frame throttling
   const frameCountRef      = useRef(0);
@@ -114,6 +121,9 @@ export default function PoseDetector({
     bottomEnteredAt.current = 0;
     lastRepAt.current = 0;
     angleBuffer.current = [];
+    velocityBuffer.current = [];
+    peakAngle.current = 0;
+    troughAngle.current = 999;
     onRepCount(0);
   }, [exercise, onRepCount]);
 
@@ -217,6 +227,20 @@ export default function PoseDetector({
               }
               const smoothAngle = angleBuffer.current.reduce((a, b) => a + b, 0) / angleBuffer.current.length;
 
+              // Track velocity (direction of movement)
+              velocityBuffer.current.push(smoothAngle);
+              if (velocityBuffer.current.length > VELOCITY_WINDOW) {
+                velocityBuffer.current.shift();
+              }
+
+              // Compute velocity: positive = angle increasing, negative = angle decreasing
+              let velocity = 0;
+              if (velocityBuffer.current.length >= 2) {
+                const vb = velocityBuffer.current;
+                velocity = vb[vb.length - 1] - vb[0];
+              }
+
+              // For dynamic movement: use both angle thresholds AND velocity direction
               const isDeep = cfg.lowerIsDeeper
                 ? smoothAngle < cfg.enterBottomAngle
                 : smoothAngle > cfg.enterBottomAngle;
@@ -225,44 +249,74 @@ export default function PoseDetector({
                 ? smoothAngle > cfg.exitTopAngle
                 : smoothAngle < cfg.exitTopAngle;
 
+              // Velocity confirms direction (prevents noise from counting)
+              const movingDown = cfg.lowerIsDeeper ? velocity < -1 : velocity > 1;
+              const movingUp = cfg.lowerIsDeeper ? velocity > 1 : velocity < -1;
+
+              // Track peak/trough for ROM validation
+              if (cfg.lowerIsDeeper) {
+                if (smoothAngle < troughAngle.current) troughAngle.current = smoothAngle;
+                if (smoothAngle > peakAngle.current) peakAngle.current = smoothAngle;
+              }
+
               const phase = repPhaseRef.current;
 
-              if (phase === 'IDLE' || phase === 'ASCENDING') {
-                if (isDeep) {
+              if (phase === 'IDLE') {
+                // Need to be moving downward AND reach the bottom zone
+                if (isDeep && (movingDown || smoothAngle < cfg.enterBottomAngle - 10)) {
                   repPhaseRef.current = 'DESCENDING';
                   bottomEnteredAt.current = now;
+                  troughAngle.current = smoothAngle;
                 }
               }
 
               if (phase === 'DESCENDING') {
+                // Track deepest point
+                if (cfg.lowerIsDeeper && smoothAngle < troughAngle.current) {
+                  troughAngle.current = smoothAngle;
+                }
                 // Still deep? Check if held long enough
                 if (isDeep && (now - bottomEnteredAt.current) >= cfg.minHoldMs) {
                   repPhaseRef.current = 'AT_BOTTOM';
-                } else if (isUp) {
+                } else if (isUp && movingUp) {
                   // Went up without holding — false dip, reset
                   repPhaseRef.current = 'IDLE';
                 }
               }
 
               if (phase === 'AT_BOTTOM') {
-                if (isUp) {
-                  // Check cooldown
-                  if ((now - lastRepAt.current) >= cfg.cooldownMs) {
+                if (isUp && movingUp) {
+                  // Validate ROM: must have sufficient range between trough and current
+                  const rom = Math.abs(smoothAngle - troughAngle.current);
+                  if (rom >= 20 && (now - lastRepAt.current) >= cfg.cooldownMs) {
                     repCountRef.current += 1;
                     lastRepAt.current = now;
                     onRepCount(repCountRef.current);
                   }
                   repPhaseRef.current = 'ASCENDING';
+                  peakAngle.current = smoothAngle;
                 }
               }
 
-              if (phase === 'ASCENDING' && isUp) {
-                repPhaseRef.current = 'IDLE';
+              if (phase === 'ASCENDING') {
+                if (isUp) {
+                  repPhaseRef.current = 'IDLE';
+                  peakAngle.current = smoothAngle;
+                  troughAngle.current = 999;
+                } else if (isDeep && movingDown) {
+                  // Fast reps: went back down without fully resetting
+                  repPhaseRef.current = 'DESCENDING';
+                  bottomEnteredAt.current = now;
+                  troughAngle.current = smoothAngle;
+                }
               }
             } else {
               // Status is idle — reset rep phase, don't count anything
               repPhaseRef.current = 'IDLE';
               angleBuffer.current = [];
+              velocityBuffer.current = [];
+              peakAngle.current = 0;
+              troughAngle.current = 999;
             }
 
             // Issue accumulation (only when actively exercising)

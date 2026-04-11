@@ -21,6 +21,14 @@ const STATUS_COLORS: Record<PostureStatus, string> = {
   idle:    '#5c9eff',
 };
 
+// Secondary color for gradient skeleton effect
+const STATUS_COLORS_ALT: Record<PostureStatus, string> = {
+  good:    '#a78bfa',
+  warning: '#ff8f00',
+  fix:     '#ff1744',
+  idle:    '#818cf8',
+};
+
 export function drawPose(
   ctx: CanvasRenderingContext2D,
   landmarks: Landmark[],
@@ -38,7 +46,9 @@ export function drawPose(
     y: lm.y * height,
   });
 
-  // Draw connections with glow
+  const colorAlt = STATUS_COLORS_ALT[status];
+
+  // Draw connections with gradient glow
   ctx.lineCap = 'round';
   ctx.lineJoin = 'round';
 
@@ -51,41 +61,56 @@ export function drawPose(
     const pa = toPixel(a);
     const pb = toPixel(b);
 
+    // Create gradient along the bone
+    const grad = ctx.createLinearGradient(pa.x, pa.y, pb.x, pb.y);
+    grad.addColorStop(0, color + 'cc');
+    grad.addColorStop(1, colorAlt + 'cc');
+
+    const glowGrad = ctx.createLinearGradient(pa.x, pa.y, pb.x, pb.y);
+    glowGrad.addColorStop(0, color + '25');
+    glowGrad.addColorStop(1, colorAlt + '25');
+
     // Outer glow line
     ctx.beginPath();
-    ctx.strokeStyle = color + '30';
-    ctx.lineWidth = 8;
+    ctx.strokeStyle = glowGrad;
+    ctx.lineWidth = 10;
     ctx.moveTo(pa.x, pa.y);
     ctx.lineTo(pb.x, pb.y);
     ctx.stroke();
 
     // Inner solid line
     ctx.beginPath();
-    ctx.strokeStyle = color + 'cc';
+    ctx.strokeStyle = grad;
     ctx.lineWidth = 3;
     ctx.moveTo(pa.x, pa.y);
     ctx.lineTo(pb.x, pb.y);
     ctx.stroke();
   }
 
-  // Draw key joints only (skip face, hands, feet)
+  // Draw key joints with dual-ring style
   const keyJoints = [11, 12, 13, 14, 15, 16, 23, 24, 25, 26, 27, 28];
-  for (const i of keyJoints) {
-    const lm = landmarks[i];
+  for (const idx of keyJoints) {
+    const lm = landmarks[idx];
     if (!lm || (lm.visibility ?? 1) < 0.4) continue;
 
     const p = toPixel(lm);
 
-    // Glow
+    // Outer ring glow
     ctx.beginPath();
-    ctx.arc(p.x, p.y, 8, 0, 2 * Math.PI);
-    ctx.fillStyle = color + '25';
+    ctx.arc(p.x, p.y, 9, 0, 2 * Math.PI);
+    ctx.fillStyle = colorAlt + '18';
     ctx.fill();
 
-    // Dot
+    // Inner ring
     ctx.beginPath();
-    ctx.arc(p.x, p.y, 4, 0, 2 * Math.PI);
+    ctx.arc(p.x, p.y, 5, 0, 2 * Math.PI);
     ctx.fillStyle = color;
+    ctx.fill();
+
+    // Center bright dot
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, 2, 0, 2 * Math.PI);
+    ctx.fillStyle = '#ffffff';
     ctx.fill();
   }
 }
@@ -163,13 +188,13 @@ export function drawHUD(
     drawGlassPill(ctx, `${primary.label}  ${primary.value}${primary.unit}`, width / 2, height * 0.14, angleFont, '#ffffffcc', 'center', 0.4);
   }
 
-  // ── Coach message (bottom-centre, above the bottom bar) ──
+  // ── Coach message (bottom-centre, just above the bottom bar) ──
   if (feedback.coachMessage) {
-    const msgSize = Math.max(14, Math.round(height * 0.04));
+    const msgSize = Math.max(13, Math.round(height * 0.036));
     const msgFont = `600 ${msgSize}px 'Inter', system-ui, sans-serif`;
     const msgColor = feedback.status === 'idle' ? '#ffffffaa' : color;
-    // Position above the bottom bar (which is ~70px from bottom)
-    drawGlassPill(ctx, feedback.coachMessage, width / 2, height - 100, msgFont, msgColor, 'center', 0.65);
+    // Positioned closer to bottom bar (~75px from bottom)
+    drawGlassPill(ctx, feedback.coachMessage, width / 2, height - 78, msgFont, msgColor, 'center', 0.6);
   }
 
   ctx.textAlign = 'left';
